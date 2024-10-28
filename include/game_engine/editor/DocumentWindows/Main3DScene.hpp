@@ -108,6 +108,7 @@ namespace engine::editor {
 
             [[nodiscard]] bool isWindowResized() const;
             void handleWindowResize();
+            void renderRightClickMenu();
 
             void renderToolbar();
             void renderGizmo();

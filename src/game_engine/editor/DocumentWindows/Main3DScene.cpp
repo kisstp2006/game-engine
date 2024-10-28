@@ -55,6 +55,7 @@ void engine::editor::Main3DScene::show()
         _viewSize = ImGui::GetContentRegionAvail();
         renderView();
         renderToolbar();
+        renderRightClickMenu();
         renderGizmo();
 
         // Draw the rest of the window contents
@@ -136,6 +137,36 @@ void engine::editor::Main3DScene::handleWindowResize()
         return;
     _camera->updateRenderTextureSize(static_cast<int>(_viewSize.x), static_cast<int>(_viewSize.y));
     ImGuizmo::SetRect(_viewPosition.x, _viewPosition.y, _viewSize.x, _viewSize.y);
+}
+
+void engine::editor::Main3DScene::renderRightClickMenu()
+{
+    static bool isRightClickMenuOpen = false;
+    static ImVec2 rightClickPos = ImVec2(0, 0);
+
+    if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered()) {
+        isRightClickMenuOpen = true;
+        rightClickPos = ImGui::GetMousePos();
+    }
+    if (isRightClickMenuOpen) {
+        ImGui::SetCursorScreenPos(rightClickPos);
+        if (ImGui::TreeNode("New primitive"))
+        {
+            ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+            node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
+
+            for (int i = 1; i < 5; i++)
+            {
+                ImGui::SetCursorScreenPos(ImVec2(rightClickPos.x + 100, rightClickPos.y + 20*i));
+                if (ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "Cube", i))
+                {
+                    ecs::Entity cube = createCube({0, 0, 0}, i*1.0, i*1.0, i*1.0, Color{255, 0, 0, 255});
+                    addEntityToScene(cube, _sceneID);
+                }
+            }
+            ImGui::TreePop();
+        }
+    }
 }
 
 typedef void (engine::editor::Main3DScene::*PrimitiveFunction)();
