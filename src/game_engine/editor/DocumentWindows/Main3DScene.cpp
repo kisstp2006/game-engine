@@ -141,40 +141,29 @@ void engine::editor::Main3DScene::handleWindowResize()
 
 void engine::editor::Main3DScene::renderRightClickMenu()
 {
-    static bool isRightClickMenuOpen = false;
-    static ImVec2 rightClickPos = ImVec2(0, 0);
+    static auto rightClickPos = ImVec2(0, 0);
+    static bool is_open = false;
+    static const char *popup_name = "right_click_menu";
 
     if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered()) {
-        isRightClickMenuOpen = true;
         rightClickPos = ImGui::GetMousePos();
-    }
-    if (isRightClickMenuOpen) {
         ImGui::SetCursorScreenPos(rightClickPos);
-        if (ImGui::TreeNode("New primitive"))
-        {
-            ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-            node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
-
-            for (int i = 1; i < 5; i++)
-            {
-                ImGui::SetCursorScreenPos(ImVec2(rightClickPos.x + 100, rightClickPos.y + 20*i));
-                if (ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "Cube", i))
-                {
-                    ecs::Entity cube = createCube({0, 0, 0}, i*1.0, i*1.0, i*1.0, Color{255, 0, 0, 255});
-                    addEntityToScene(cube, _sceneID);
-                }
-            }
-            ImGui::TreePop();
-        }
+        ImGui::OpenPopup(popup_name);
+        is_open = true;
+    }
+    if (is_open) {
+        ImGui::SetCursorScreenPos(rightClickPos);
+        rightClickMenu(popup_name);
+    }
+    if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered()){
+        ImGui::CloseCurrentPopup();
+        is_open = false;
     }
 }
 
-typedef void (engine::editor::Main3DScene::*PrimitiveFunction)();
-
 void engine::editor::Main3DScene::renderToolbar()
 {
-    static bool chose_primitive = false;
-    ImVec2 buttonSize = ImVec2(40, 40);
+    auto buttonSize = ImVec2(40, 40);
     float padding = 0.0f;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(padding, padding));
@@ -208,39 +197,13 @@ void engine::editor::Main3DScene::renderToolbar()
         //engine::input::setCursorMode(CursorMode::ROTATE);
     }
 
+    const char *popup_name = "add_primitive";
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_CUBE, buttonSize)) {
-        ImGui::OpenPopup("add_primitive");
+        ImGui::OpenPopup(popup_name);
     }
 
-    ImGui::SameLine();
-    if (ImGui::BeginPopup("add_primitive"))
-    {
-        const char* primitives_names[] = { "  Cube", "  Plan", "  Sphere",\
-            "  Cylinder", "  Cone", "  Polygon", "  Torus", "  Knot",\
-            "  Hemisphere" };
-        PrimitiveFunction add_primitive_fct[] = {
-            &Main3DScene::add_cube,
-            &Main3DScene::add_plan,
-            &Main3DScene::add_sphere,
-            &Main3DScene::add_cylinder,
-            &Main3DScene::add_cone,
-            &Main3DScene::add_polygon,
-            &Main3DScene::add_torus,
-            &Main3DScene::add_knot,
-            &Main3DScene::add_hemisphere
-        };
-        ImGui::SeparatorText(" Add primitive ");
-        for (int i = 0; i < IM_ARRAYSIZE(primitives_names); i++)
-        {
-            if (ImGui::Selectable(primitives_names[i], &chose_primitive))
-            {
-                (this->*add_primitive_fct[i])();
-            }
-        }
-
-        ImGui::EndPopup();
-    }
+    createPrimitivePopUp(popup_name);
 
     ImGui::SameLine();
     ImGui::PushItemWidth(100);

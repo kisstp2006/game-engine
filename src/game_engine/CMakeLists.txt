@@ -8,12 +8,13 @@ set(SRCS
     src/game_engine/editor/SceneManagerBridge.cpp
     src/game_engine/editor/DocumentWindows/Main3DScene.cpp
     src/game_engine/editor/DocumentWindows/SceneTreeWindow.cpp
-    src/game_engine/editor/DocumentWindows/EntityPropertiesWindow.cpp
     src/game_engine/editor/DocumentWindows/ModelViewerWindow.cpp
     src/game_engine/editor/DocumentWindows/ConsoleWindow.cpp
+    src/game_engine/editor/DocumentWindows/EntityPropertiesWindow.cpp
     src/game_engine/editor/DocumentWindows/EntityProperties/AEntityProperty.cpp
     src/game_engine/editor/DocumentWindows/EntityProperties/TransformProperty.cpp
     src/game_engine/editor/DocumentWindows/EntityProperties/RenderProperty.cpp
+    src/game_engine/editor/DocumentWindows/UIComponents/ToolBar.cpp
     src/game_engine/core/GameEngine.cpp
     src/game_engine/core/AudioHandling.cpp
     src/game_engine/core/CameraHandling.cpp
@@ -34,7 +35,6 @@ set(SRCS
     src/game_engine/ecs/systems/Input.cpp
     src/game_engine/ecs/systems/Audio.cpp
     src/game_engine/ecs/Entity.cpp
-
 )
 
 set(CMAKE_CXX_STANDARD 20)

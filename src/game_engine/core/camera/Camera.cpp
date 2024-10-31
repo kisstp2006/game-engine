@@ -22,7 +22,7 @@ namespace engine {
             //Vertical rotation
             static float pitch = 0.0f;
 
-            if (engine::isMouseButtonDown(ecs::components::input::MouseButtons::MouseRight)) {
+            if (engine::isMouseButtonDown(ecs::components::input::MouseButtons::MouseMiddle)) {
                 yaw += mouseDelta.x * mouseSensitivity;
                 pitch -= mouseDelta.y * mouseSensitivity;
 
