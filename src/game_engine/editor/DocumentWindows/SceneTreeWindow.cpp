@@ -10,6 +10,8 @@
 #include <EntityHandling.hpp>
 #include "game_engine/editor/DocumentWindows/SceneTreeWindow.hpp"
 
+#include <editor/DocumentWindows/Main3DScene.hpp>
+
 #include "game_engine/ecs/components/Physics.hpp"
 #include "game_engine/GameEngine.hpp"
 #include "../../TestBehaviour.hpp"
@@ -54,11 +56,7 @@ namespace engine::editor {
             base_flags |= ImGuiTreeNodeFlags_Selected;
         }
 
-        // Node
-        // increase font size
-
-        bool node_open = ImGui::TreeNodeEx(object.name.c_str(),
-            base_flags);
+        bool node_open = ImGui::TreeNodeEx(object.name.c_str(), base_flags);
         if (ImGui::IsItemClicked()) {
             if (object.type == SCENE_OBJECT_TYPE_ENTITY)
                 _sceneManagerBridge.setSelectedEntity(object.id);
@@ -76,8 +74,15 @@ namespace engine::editor {
                 engine::destroyEntity(object.id);
                 // Delete logic here
             }
-            if (ImGui::MenuItem("Add child")) {
-                // Add child logic here
+            if (ImGui::BeginMenu("Add child")) {
+                static Main3DScene scene;
+                auto primitives = scene.getPrimitives();
+                for (auto& primitive : primitives) {
+                    if (ImGui::MenuItem(primitive.first.c_str())) {
+                        (scene.*primitive.second)();
+                    }
+                }
+                ImGui::EndMenu();
             }
             ImGui::EndPopup();
         }
