@@ -1,0 +1,66 @@
+name: Build and Package
+
+on:
+  push:
+    branches:
+      - feat/cicd-build
+  pull_request:
+    branches:
+      - feat/cicd-build
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          cmake-version: "3.20"
+
+      - name: Install dependencies
+        run: |
+          if [ -d "./vcpkg" ]; then
+            ./vcpkg/bootstrap-vcpkg.sh
+          else
+            echo "vcpkg directory not found"
+          fi
+
+      - name: Build the project
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: Copy build artifacts
+        run: |
+          if [ -d "./build/Release" ]; then
+            cp -r ./build/Release/* ./build/
+          elif [ -d "./build/Debug" ]; then
+            cp -r ./build/Debug/* ./build/
+          else
+            echo "Build output not found" && exit 1
+          fi
+
+      - name: Copy resources
+        run: |
+          if [ -d "./ressources" ]; then
+            cp -r ./ressources ./build/
+          else
+            echo "Resources directory not found" && exit 1
+          fi
+
+      - name: Package the build into a tar archive
+        run: |
+          tar -C $(pwd) -cf package.tar build
+          if [ $? -ne 0 ]; then
+            echo "Tar packaging failed" && exit 1
+          fi
+
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: package
+          path: package.tar
