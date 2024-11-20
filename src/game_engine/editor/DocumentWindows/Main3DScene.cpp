@@ -169,7 +169,7 @@ void engine::editor::Main3DScene::loadEntities()
     ecs::Entity cube = engine::createCube({0, 0.5, 0}, 2, 2, 2, WHITE, true);
     //ecs::Entity model = engine::createModel3D("src/game_engine/ressources/models/guy.iqm", {0, 0, 0});
     ecs::Entity cube2 = engine::createCube({0, 0, 0}, 10, 1, 10, WHITE, true);
-    auto light = engine::createLight(engine::core::POINT, {-2, 1, -2}, {0, 0, 0}, YELLOW);
+    //auto light = engine::createLight(engine::core::POINT, {-2, 1, -2}, {0, 0, 0}, YELLOW);
     auto light2 = engine::createLight(engine::core::POINT, {2, 1, 2}, {0, 0, 0}, RED);
     auto light3 = engine::createLight(engine::core::POINT, {-2, 1, 2}, {0, 0, 0}, GREEN);
     auto light4 = engine::createLight(engine::core::POINT, {2, 1, -2}, {0, 0, 0}, BLUE);
@@ -237,20 +237,49 @@ void engine::editor::Main3DScene::renderGrid(void)
     EndTextureMode();
 }
 
+void engine::editor::Main3DScene::renderLightCreationPopup()
+{
+    static Vector3 position = {0, 1, 0};
+    static Vector3 target = {0, 0, 0};
+    static Color selectedColor = WHITE;
+    static float color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    ImGui::Text("Create Light");
+    ImGui::Separator();
+
+    ImGui::DragFloat3("Position", &position.x, 0.1f);
+    ImGui::DragFloat3("Target", &target.x, 0.1f);
+
+    ImGui::ColorEdit4("Color", color);
+
+    selectedColor = {
+        static_cast<unsigned char>(color[0] * 255),
+        static_cast<unsigned char>(color[1] * 255),
+        static_cast<unsigned char>(color[2] * 255),
+        static_cast<unsigned char>(color[3] * 255)
+    };
+    if (ImGui::Button("Create")) {
+        engine::core::LightId newLight = engine::createLight(engine::core::POINT, position, target, selectedColor);
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+    }
+}
+
+
 void engine::editor::Main3DScene::renderToolbar()
 {
     static bool chose_primitive = false;
+    static bool openLightPopup = false;
     ImVec2 buttonSize = ImVec2(40, 40);
     float padding = 0.0f;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(padding, padding));
     ImGui::SetCursorScreenPos(ImVec2(_viewPosition.x + 10, _viewPosition.y + 10));
-    if (ImGui::Button("Orthographic")) {
-        // Switch to orthographic camera mode
-        //engine::camera::setMode(CameraMode::ORTHOGRAPHIC);
-    }
 
-    ImGui::SameLine();
     if (ImGui::Button("Perspective")) {
         // Switch to perspective camera mode
         //engine::camera::setMode(CameraMode::PERSPECTIVE);
@@ -305,6 +334,22 @@ void engine::editor::Main3DScene::renderToolbar()
             }
         }
 
+        ImGui::EndPopup();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_LIGHTBULB, buttonSize)) {
+        openLightPopup = true;
+    }
+
+    if (openLightPopup) {
+        ImGui::OpenPopup("add_light");
+        openLightPopup = false;
+    }
+
+    if (ImGui::BeginPopup("add_light"))
+    {
+        renderLightCreationPopup();
         ImGui::EndPopup();
     }
 

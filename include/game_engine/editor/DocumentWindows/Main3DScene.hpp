@@ -117,6 +117,7 @@ namespace engine::editor {
             void handleKeyEvents();
 
             void renderGrid();
+            void renderLightCreationPopup();
             void renderToolbar();
             void renderGizmo();
             void renderView();
