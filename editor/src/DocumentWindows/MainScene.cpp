@@ -21,6 +21,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "SceneViewManager.hpp"
+#include "Primitive.hpp"
 
 namespace nexo::editor {
 

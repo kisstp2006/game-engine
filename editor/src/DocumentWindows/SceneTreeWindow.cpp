@@ -20,21 +20,27 @@
 #include <raylib.h>
 
 #include "SceneViewManager.hpp"
+#include "Primitive.hpp"
 
-namespace nexo::editor {
+namespace nexo::editor
+{
     SceneTreeWindow::SceneTreeWindow()
-    {}
+    {
+    }
 
     SceneTreeWindow::~SceneTreeWindow()
-    {}
+    {
+    }
 
     void SceneTreeWindow::setup()
-    {}
+    {
+    }
 
     void SceneTreeWindow::shutdown()
-    {}
+    {
+    }
 
-    void SceneTreeWindow::handleRename(SceneObject &obj)
+    void SceneTreeWindow::handleRename(SceneObject& obj)
     {
         ImGui::BeginGroup();
         ImGui::TextUnformatted(ObjectTypeToIcon.at(obj.type).c_str());
@@ -62,17 +68,18 @@ namespace nexo::editor {
         ImGui::EndGroup();
     }
 
-    bool SceneTreeWindow::handleSelection(SceneObject &obj, std::string &uniqueLabel, ImGuiTreeNodeFlags baseFlags)
+    bool SceneTreeWindow::handleSelection(SceneObject& obj, std::string& uniqueLabel, ImGuiTreeNodeFlags baseFlags)
     {
         bool nodeOpen = ImGui::TreeNodeEx(uniqueLabel.c_str(), baseFlags);
-        auto &viewManager = SceneViewManager::getInstance();
+        auto& viewManager = SceneViewManager::getInstance();
         if (ImGui::IsItemClicked())
         {
             if (obj.type == SelectionType::ENTITY)
             {
                 m_sceneManagerBridge->setSelectedEntity(obj.id);
                 m_sceneManagerBridge->setSelectionType(SelectionType::ENTITY);
-            } else if (obj.type == SelectionType::CAMERA)
+            }
+            else if (obj.type == SelectionType::CAMERA)
             {
                 if (!std::holds_alternative<CameraProperties>(obj.data))
                     return nodeOpen;
@@ -82,7 +89,8 @@ namespace nexo::editor {
                 m_sceneManagerBridge->setSelectedEntity(obj.id);
                 m_sceneManagerBridge->setData(obj.data);
                 m_sceneManagerBridge->setSelectionType(SelectionType::CAMERA);
-            } else if (obj.type == SelectionType::LAYER)
+            }
+            else if (obj.type == SelectionType::LAYER)
             {
                 if (!std::holds_alternative<LayerProperties>(obj.data))
                     return nodeOpen;
@@ -92,7 +100,8 @@ namespace nexo::editor {
                 m_sceneManagerBridge->setSelectedEntity(obj.id);
                 m_sceneManagerBridge->setData(obj.data);
                 m_sceneManagerBridge->setSelectionType(SelectionType::LAYER);
-            } else if (obj.type == SelectionType::SCENE)
+            }
+            else if (obj.type == SelectionType::SCENE)
             {
                 viewManager->setSelectedScene(obj.id);
                 m_sceneManagerBridge->setSelectedEntity(obj.id);
@@ -102,10 +111,8 @@ namespace nexo::editor {
         return nodeOpen;
     }
 
-    void SceneTreeWindow::sceneSelected(SceneObject &obj)
+    void SceneTreeWindow::sceneSelected(SceneObject& obj)
     {
-
-
         if (ImGui::MenuItem("Delete Scene"))
         {
             char buffer[256];
@@ -121,7 +128,7 @@ namespace nexo::editor {
         }
     }
 
-    void SceneTreeWindow::layerSelected(SceneObject &obj)
+    void SceneTreeWindow::layerSelected(SceneObject& obj)
     {
         if (!std::holds_alternative<LayerProperties>(obj.data))
             return;
@@ -129,21 +136,28 @@ namespace nexo::editor {
 
         if (ImGui::MenuItem("Delete Layer"))
         {
-            auto &app = nexo::getApp();
+            auto& app = nexo::getApp();
             app.removeLayer(props.sceneId, props.layerName);
             m_sceneManagerBridge->unselectEntity();
         }
-        if (ImGui::MenuItem("Add entity"))
+        if (ImGui::BeginMenu("Add entity"))
         {
-            ecs::Entity basicQuad = EntityFactory2D::createQuad({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, 0.0f, {0.0f, 1.0f, 0.0f, 1.0f});
-            auto &app = getApp();
-            app.addEntityToScene(basicQuad, props.sceneId, props.layerName);
-            m_sceneManagerBridge->setSelectedEntity(basicQuad);
-            m_sceneManagerBridge->setSelectionType(SelectionType::ENTITY);
+            for (int i = 0; i < IM_ARRAYSIZE(primitives_names); i++)
+            {
+                if (ImGui::MenuItem(primitives_names[i]))
+                {
+                    ecs::Entity newPrimitive = add_primitive_fct[i]({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, 0.0f, {0.0f, 1.0f, 0.0f, 1.0f});
+                    auto&app = getApp();
+                    app.addEntityToScene(newPrimitive, props.sceneId, props.layerName);
+                    m_sceneManagerBridge->setSelectedEntity(newPrimitive);
+                    m_sceneManagerBridge->setSelectionType(SelectionType::ENTITY);
+                }
+            }
+            ImGui::EndMenu();
         }
     }
 
-    void SceneTreeWindow::cameraSelected(SceneObject &obj)
+    void SceneTreeWindow::cameraSelected(SceneObject& obj)
     {
         if (!std::holds_alternative<CameraProperties>(obj.data))
             return;
@@ -152,25 +166,25 @@ namespace nexo::editor {
         if (ImGui::MenuItem("Delete Camera"))
         {
             m_sceneManagerBridge->unselectEntity();
-            auto &app = nexo::getApp();
+            auto& app = nexo::getApp();
             app.detachCamera(props.sceneId, props.layerName);
         }
     }
 
-    void SceneTreeWindow::entitySelected(SceneObject &obj)
+    void SceneTreeWindow::entitySelected(SceneObject& obj)
     {
         if (ImGui::MenuItem("Delete Entity"))
         {
             m_sceneManagerBridge->unselectEntity();
-            auto &app = nexo::getApp();
+            auto& app = nexo::getApp();
             app.destroyEntity(obj.id);
         }
     }
 
-    void SceneTreeWindow::showNode(SceneObject &object)
+    void SceneTreeWindow::showNode(SceneObject& object)
     {
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                                       ImGuiTreeNodeFlags_SpanAvailWidth;
+            ImGuiTreeNodeFlags_SpanAvailWidth;
         // Checks if the object is at the end of a tree
         bool leaf = object.children.empty();
         if (leaf)
@@ -178,7 +192,7 @@ namespace nexo::editor {
 
         // Checks if the object is selected
         if (m_sceneManagerBridge->isEntitySelected() && object.id ==
-                m_sceneManagerBridge->getSelectedEntity() && object.type == m_sceneManagerBridge->getSelectionType())
+            m_sceneManagerBridge->getSelectedEntity() && object.type == m_sceneManagerBridge->getSelectionType())
             baseFlags |= ImGuiTreeNodeFlags_Selected;
 
         bool nodeOpen = false;
@@ -214,7 +228,7 @@ namespace nexo::editor {
         // Go further into the tree
         if (nodeOpen && !leaf)
         {
-            for (auto &child: object.children)
+            for (auto& child : object.children)
             {
                 showNode(child);
             }
@@ -249,12 +263,13 @@ namespace nexo::editor {
 
                 if (!newSceneName.empty())
                 {
-                    auto &viewManager = SceneViewManager::getInstance();
+                    auto& viewManager = SceneViewManager::getInstance();
                     viewManager->addNewScene(sceneNameBuffer);
                     memset(sceneNameBuffer, 0, sizeof(sceneNameBuffer));
 
                     m_popupManager.closePopupInContext();
-                } else
+                }
+                else
                 {
                     LOG(NEXO_WARN, "Scene name is empty !");
                 }
@@ -288,13 +303,14 @@ namespace nexo::editor {
                     if (std::holds_alternative<int>(m_popupManager.getUserData("Add New Layer")))
                     {
                         int sceneId = std::get<int>(m_popupManager.getUserData("Add New Layer"));
-                        auto &app = getApp();
+                        auto& app = getApp();
                         app.addNewLayer(sceneId, layerNameBuffer);
                         memset(layerNameBuffer, 0, sizeof(layerNameBuffer));
                     }
 
                     m_popupManager.closePopupInContext();
-                } else
+                }
+                else
                 {
                     LOG(NEXO_WARN, "Layer name is empty !");
                 }
@@ -332,7 +348,7 @@ namespace nexo::editor {
         ImGui::End();
     }
 
-    SceneObject SceneTreeWindow::newSceneNode(scene::SceneId id, const std::string &uiName)
+    SceneObject SceneTreeWindow::newSceneNode(scene::SceneId id, const std::string& uiName)
     {
         SceneObject sceneNode;
         sceneNode.name = ObjectTypeToIcon.at(SelectionType::SCENE) + uiName;
@@ -384,17 +400,17 @@ namespace nexo::editor {
         // Retrieves the scenes that are displayed on the GUI
         auto scenes = SceneViewManager::getInstance()->getOpenScenes();
 
-        for (const auto &scene: scenes)
+        for (const auto& scene : scenes)
         {
             SceneObject sceneNode = newSceneNode(scene.sceneId, scene.uiName);
 
             // Retrieve the global entities of the scene (i.e entities that are not part of a layer)
             auto sceneEntities = m_sceneManagerBridge->getSceneGlobalEntities(scene.sceneId);
-            for (auto entity: sceneEntities)
+            for (auto entity : sceneEntities)
                 sceneNode.children.push_back(newEntityNode(entity));
 
             auto layers = m_sceneManagerBridge->getSceneLayers(scene.sceneId);
-            for (const auto &layer: layers)
+            for (const auto& layer : layers)
             {
                 SceneObject layerNode = newLayerNode(scene.sceneId, layer);
 
@@ -404,7 +420,7 @@ namespace nexo::editor {
                     layerNode.children.push_back(cameraNode);
 
                 auto entities = m_sceneManagerBridge->getLayerEntities(scene.sceneId, layer->name);
-                for (const auto &entity: entities)
+                for (const auto& entity : entities)
                 {
                     SceneObject entityNode = newEntityNode(entity);
 
@@ -415,5 +431,4 @@ namespace nexo::editor {
             root_.children.push_back(sceneNode);
         }
     }
-
 }
