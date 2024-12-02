@@ -21,7 +21,7 @@ namespace nexo::editor {
 
     class ConsoleWindow final : public ADocumentWindow {
         public:
-            explicit ConsoleWindow(const Editor& editor)
+            explicit ConsoleWindow(Editor* editor)
                 : _editor(editor) {}
 
             ~ConsoleWindow() override;
@@ -49,7 +49,7 @@ namespace nexo::editor {
                 loguru::Verbosity_INFO,
             };
 
-            const Editor& _editor;
+            Editor* _editor;
 
             void clearLog();
             void displayLog(loguru::Verbosity verbosity, const std::string &msg) const;

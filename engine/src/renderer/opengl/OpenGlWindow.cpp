@@ -100,10 +100,18 @@ namespace nexo::renderer {
         }
 #endif
 
-		// TODO: add in documentation, if a function of opengl segv, it might be bcs this hints a version older than the function's opengl version
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#else
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         _openGlWindow = glfwCreateWindow(static_cast<int>(_props.width), static_cast<int>(_props.height), _props.title, nullptr, nullptr);
@@ -149,6 +157,7 @@ namespace nexo::renderer {
 
     void OpenGlWindow::setWindowIcon(const std::filesystem::path& iconPath)
     {
+#ifndef __APPLE__
         GLFWimage icon;
         const auto iconStringPath = iconPath.string();
         icon.pixels = stbi_load(iconStringPath.c_str(), &icon.width, &icon.height, nullptr, 4);
@@ -163,6 +172,7 @@ namespace nexo::renderer {
         LOG(NEXO_DEV, "Window icon loaded from '{}', size {}x{}", iconStringPath, icon.width, icon.height);
         glfwSetWindowIcon(_openGlWindow, 1, &icon);
         stbi_image_free(icon.pixels);
+#endif
     }
 
     void OpenGlWindow::setErrorCallback(void *fctPtr)

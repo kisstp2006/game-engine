@@ -20,6 +20,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Installation rules
 install(TARGETS nexoEditor
         RUNTIME DESTINATION bin
+        FRAMEWORK DESTINATION "Library/Frameworks"
 )
 
 # Automatically install runtime dependencies (Windows .dll files, Linux .so files, etc.)
@@ -28,6 +29,7 @@ install(TARGETS nexoEditor
         PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" ".*system32.*" [[.*(\\|/)system32(\\|/).*\.dll]]
         POST_EXCLUDE_REGEXES ".*windows.*" ".*Microsoft.*" [[.*(\\|/)system32(\\|/).*\.dll]]
         RUNTIME DESTINATION bin
+        FRAMEWORK DESTINATION "Library/Frameworks"
         PRIVATE_HEADER DESTINATION include COMPONENT headers
         PUBLIC_HEADER DESTINATION include COMPONENT headers
 )

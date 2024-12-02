@@ -96,6 +96,17 @@ namespace nexo::editor {
         auto const &app = Application::getInstance();
         auto &window = app.getWindow();
 
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            LOG(NEXO_ERROR, "Failed to initialize GLAD");
+            throw std::runtime_error("Failed to initialize GLAD");
+        }
+
+        // Check OpenGL version
+        int majorVersion, minorVersion;
+        glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
+        glGetIntegerv(GL_MINOR_VERSION, &minorVersion);
+        LOG(NEXO_INFO, "OpenGL Version: {}.{}", majorVersion, minorVersion);
+
 #ifdef __linux__
     #ifndef WAYLAND_APP_ID
         #warning "WAYLAND_APP_ID not defined, cannot set Wayland app id for window"

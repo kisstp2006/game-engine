@@ -14,9 +14,12 @@ set(NEXO_GRAPHICS_API "OpenGL" CACHE STRING "Graphics API to use")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set(NEXO_COMPILER_FLAGS_ALL --std=c++${CMAKE_CXX_STANDARD})
-    set(NEXO_COMPILER_FLAGS_DEBUG -g -Wmissing-field-initializers -Wall -Wextra -Wpedantic)
+    set(NEXO_COMPILER_FLAGS_DEBUG -g -Wmissing-field-initializers -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer)
     set(NEXO_COMPILER_FLAGS_RELEASE -O3)
     set(NEXO_COVERAGE_FLAGS -O0 --coverage)
+    if(APPLE)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+    endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(NEXO_COMPILER_FLAGS_ALL /std:c++${CMAKE_CXX_STANDARD})
     set(NEXO_COMPILER_FLAGS_DEBUG /Zi /Od /Zc:preprocessor)
@@ -81,6 +84,30 @@ else()
     message(STATUS "Skipping VCPKG bootstrap")
 endif()
 
+# Add these VCPKG settings BEFORE including vcpkg.cmake
+if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+    set(VCPKG_TARGET_ARCHITECTURE arm64)
+    set(VCPKG_CRT_LINKAGE dynamic)
+    set(VCPKG_LIBRARY_LINKAGE static)
+    set(VCPKG_CMAKE_SYSTEM_NAME Darwin)
+    set(VCPKG_OSX_ARCHITECTURES arm64)
+
+    # Setup GLAD
+    set(GLAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/glad")
+    if(NOT EXISTS "${GLAD_DIR}")
+        message(STATUS "Downloading GLAD...")
+        file(MAKE_DIRECTORY "${GLAD_DIR}")
+        file(DOWNLOAD
+            "https://raw.githubusercontent.com/Dav1dde/glad/master/glad/glad.h"
+            "${GLAD_DIR}/include/glad/glad.h"
+        )
+        file(DOWNLOAD
+            "https://raw.githubusercontent.com/Dav1dde/glad/master/src/glad.c"
+            "${GLAD_DIR}/src/glad.c"
+        )
+    endif()
+endif()
+
 # RUNNING VCPKG
 message(STATUS "Running VCPKG...")
 include("${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
@@ -99,3 +126,38 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
 include_directories("./common")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/scripts/pack.cmake")
+
+if(APPLE)
+    add_compile_definitions(GL_SILENCE_DEPRECATION)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version")
+    
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+        # Set ARM64 specific flags
+        add_compile_definitions(PLATFORM_MACOS_ARM)
+        set(CMAKE_OSX_ARCHITECTURES "arm64")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64")
+        
+        # Use Homebrew paths for M1 Mac
+        include_directories(/opt/homebrew/include)
+        link_directories(/opt/homebrew/lib)
+        
+        # Add GLAD
+        add_library(glad STATIC "${GLAD_DIR}/src/glad.c")
+        target_include_directories(glad PUBLIC "${GLAD_DIR}/include")
+    endif()
+    
+    # Find required packages
+    find_package(OpenGL REQUIRED)
+    find_package(glfw3 REQUIRED)
+    
+    # Link against required frameworks and libraries
+    target_link_libraries(nexoRenderer PRIVATE
+        glad
+        ${OPENGL_LIBRARIES}
+        glfw
+        "-framework OpenGL"
+        "-framework Cocoa"
+        "-framework IOKit"
+        "-framework CoreVideo"
+    )
+endif()

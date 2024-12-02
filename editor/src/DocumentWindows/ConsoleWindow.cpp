@@ -94,7 +94,7 @@ namespace nexo::editor {
     void ConsoleWindow::calcLogPadding()
     {
         m_logPadding = 0.0f;
-        for (const auto &[verbosity, message, prefix]: _editor.getLogs())
+        for (const auto &[verbosity, message, prefix]: _editor->getLogs())
         {
             if (!selectedVerbosityLevels.contains(verbosity))
                 continue;
@@ -166,6 +166,10 @@ namespace nexo::editor {
 
     void ConsoleWindow::show()
     {
+        if (!_editor) {
+            return;
+        }
+        
         ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
         ImGui::Begin("Console", &m_opened, ImGuiWindowFlags_NoCollapse);
 
@@ -176,7 +180,7 @@ namespace nexo::editor {
             calcLogPadding();
 
         auto id = 0;
-        for (const auto &[verbosity, message, prefix]: _editor.getLogs())
+        for (const auto &[verbosity, message, prefix]: _editor->getLogs())
         {
             if (!selectedVerbosityLevels.contains(verbosity))
                 continue;
