@@ -21,7 +21,6 @@
 
 #include <thread>
 #include <core/exceptions/Exceptions.hpp>
-#include <DocumentWindows/InspectorWindow.hpp>
 
 int main(int argc, char **argv)
 {
