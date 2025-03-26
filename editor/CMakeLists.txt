@@ -98,6 +98,7 @@ target_link_libraries(nexoEditor PRIVATE Boost::dll)
 
 # Boost UUID
 find_package(boost_uuid CONFIG REQUIRED)
+target_link_libraries(nexoEditor PRIVATE Boost::uuid)
 
 include_directories(include)
 
