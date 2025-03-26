@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     try {
         loguru::init(argc, argv);
         loguru::g_stderr_verbosity = loguru::Verbosity_3;
-        nexo::editor::Editor editor;
+        nexo::editor::Editor &editor = nexo::editor::Editor::getInstance();
         auto &sceneViewManager = nexo::editor::SceneViewManager::get();
         auto defaultScene = std::make_shared<nexo::editor::MainScene>("Default scene", true);
         sceneViewManager.addNewScene("Default scene", defaultScene);
