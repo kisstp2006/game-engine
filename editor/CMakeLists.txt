@@ -36,8 +36,6 @@ set(SRCS
     editor/src/DocumentWindows/EntityProperties/SpotLightProperty.cpp
     editor/src/DocumentWindows/EntityProperties/CameraProperty.cpp
     editor/src/DocumentWindows/EntityProperties/CameraController.cpp
-    editor/src/assets/AssetManager.cpp
-    editor/src/assets/Asset.cpp
     editor/src/DocumentWindows/AssetManagerWindow.cpp
 )
 
