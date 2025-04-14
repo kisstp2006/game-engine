@@ -278,6 +278,7 @@ namespace nexo {
 
         if (!m_isMinimized)
         {
+            renderContext.sceneRendered = sceneId;
         	if (m_SceneManager.getScene(sceneId).isRendered())
 			{
 				m_cameraContextSystem->update();
