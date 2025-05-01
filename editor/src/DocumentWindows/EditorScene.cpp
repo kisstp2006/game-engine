@@ -74,17 +74,35 @@ namespace nexo::editor {
     {
         auto &app = getApp();
         scene::Scene &scene = app.getSceneManager().getScene(m_sceneId);
+
+        // Lights
         const ecs::Entity ambientLight = LightFactory::createAmbientLight({0.5f, 0.5f, 0.5f});
         scene.addEntity(ambientLight);
         const ecs::Entity pointLight = LightFactory::createPointLight({1.2f, 5.0f, 0.1f});
         scene.addEntity(pointLight);
         const ecs::Entity directionalLight = LightFactory::createDirectionalLight({0.2f, -1.0f, -0.3f});
         scene.addEntity(directionalLight);
-        const ecs::Entity spotLight = LightFactory::createSpotLight({0.0f, 0.5f, -2.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
-        scene.addEntity(spotLight);
-        const ecs::Entity basicCube = EntityFactory3D::createCube({0.0f, -5.0f, -5.0f}, {20.0f, 1.0f, 20.0f},
-                                                               {0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.31f, 1.0f});
-        app.getSceneManager().getScene(m_sceneId).addEntity(basicCube);
+
+        // Sol statique incliné
+        ecs::Entity floor = EntityFactory3D::createCube(
+            {0.0f, -1.0f, 0.0f},
+            {10.0f, 1.0f, 10.0f},
+            {0.0f, 0.0f, 0.0f},
+            {1.0f, 0.3f, 0.3f, 1.0f}
+        );
+        app.getSceneManager().getScene(m_sceneId).addEntity(floor);
+        auto &floorTransform = Application::getEntityComponent<components::TransformComponent>(floor);
+        app.getPhysicsSystem().AddStaticBody(floor, floorTransform);
+
+        ecs::Entity cube = EntityFactory3D::createCube(
+            {0.0f, 5.0f, 0.0f},
+            {1.0f, 1.0f, 1.0f},
+            {0.0f, 0.0f, 0.0f},
+            {1.0f, 1.0f, 1.0f, 1.0f}
+        );
+        app.getSceneManager().getScene(m_sceneId).addEntity(cube);
+        const auto &cubeTransform = Application::getEntityComponent<components::TransformComponent>(cube);
+        app.getPhysicsSystem().AddPhysicsBody(cube, cubeTransform);
     }
 
     void EditorScene::setupWindow()
@@ -119,35 +137,42 @@ namespace nexo::editor {
 
     void EditorScene::renderGizmo() const
     {
-        const auto &coord = nexo::Application::m_coordinator;
-        auto const &selector = Selector::get();
-        if (selector.getSelectionType() != SelectionType::ENTITY ||
-            selector.getSelectedScene() != m_sceneId)
+        const auto& coord = nexo::Application::m_coordinator;
+        const auto& selector = Selector::get();
+        if (selector.getSelectionType() != SelectionType::ENTITY || selector.getSelectedScene() != m_sceneId)
             return;
+
         const ecs::Entity entity = selector.getSelectedEntity();
-        const auto &transformCameraComponent = coord->getComponent<components::TransformComponent>(m_activeCamera);
-        const auto &cameraComponent = coord->getComponent<components::CameraComponent>(m_activeCamera);
+
+        const auto& transformCameraComponent = coord->getComponent<components::TransformComponent>(m_activeCamera);
+        const auto& cameraComponent = coord->getComponent<components::CameraComponent>(m_activeCamera);
+
         ImGuizmo::SetOrthographic(cameraComponent.type == components::CameraType::ORTHOGRAPHIC);
         ImGuizmo::SetDrawlist();
         ImGuizmo::SetID(static_cast<int>(entity));
         ImGuizmo::SetRect(m_viewPosition.x, m_viewPosition.y, m_viewSize.x, m_viewSize.y);
+
         glm::mat4 viewMatrix = cameraComponent.getViewMatrix(transformCameraComponent);
         glm::mat4 projectionMatrix = cameraComponent.getProjectionMatrix();
+
         const auto transf = coord->tryGetComponent<components::TransformComponent>(entity);
         if (!transf)
             return;
+
         const glm::mat4 rotationMat = glm::toMat4(transf->get().quat);
         glm::mat4 transformMatrix = glm::translate(glm::mat4(1.0f), transf->get().pos) *
                                     rotationMat *
-                                    glm::scale(glm::mat4(1.0f), {transf->get().size.x, transf->get().size.y, transf->get().size.z});
+                                    glm::scale(glm::mat4(1.0f), transf->get().size);
+
         ImGuizmo::Enable(true);
-        ImGuizmo::Manipulate(glm::value_ptr(viewMatrix), glm::value_ptr(projectionMatrix),
+        ImGuizmo::Manipulate(glm::value_ptr(viewMatrix),
+                             glm::value_ptr(projectionMatrix),
                              m_currentGizmoOperation,
                              ImGuizmo::MODE::WORLD,
                              glm::value_ptr(transformMatrix));
 
-        glm::vec3 translation(0);
-        glm::vec3 scale(0);
+        glm::vec3 translation(0.0f);
+        glm::vec3 scale(1.0f);
         glm::quat quaternion;
 
         math::decomposeTransformQuat(transformMatrix, translation, quaternion, scale);
@@ -157,8 +182,41 @@ namespace nexo::editor {
             transf->get().pos = translation;
             transf->get().quat = quaternion;
             transf->get().size = scale;
+
+        // TODO: For physics handle move with gizmo
+        //     auto& app = getApp();
+        //     auto& physicsWrapper = app.getPhysicsSystem();
+        //     auto* bi = physicsWrapper.getBodyInterface(); // BodyInterface*
+        //     const JPH::BodyLockInterface *bodyLockInterface = physicsWrapper.getBodyLockInterface();
+        //
+        //     const auto bodyComp = Application::m_coordinator->tryGetComponent<components::PhysicsBodyComponent>(entity);
+        //     if (bodyComp) {
+        //         std::cout << "[Editor] 1\n";
+        //         JPH::BodyID bodyID = bodyComp->get().bodyID;
+        //
+        //         JPH::BodyLockWrite lock(*bodyLockInterface, bodyID);
+        //         if (lock.Succeeded())
+        //         {
+        //             std::cout << "[Editor] 2\n";
+        //
+        //             JPH::Body* body = &lock.GetBody();
+        //             if (body && body->IsStatic())
+        //             {
+        //                 std::cout << "[Editor] 3\n";
+        //
+        //                 JPH::RVec3 newPosition(translation.x, translation.y, translation.z);
+        //                 JPH::Quat newRotation(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+        //
+        //                 if (bi->IsAdded(bodyID)) {
+        //                     bi->RemoveBody(bodyID);
+        //                     bi->SetPositionAndRotation(bodyID, newPosition, newRotation, JPH::EActivation::DontActivate);
+        //                     bi->AddBody(bodyID, JPH::EActivation::DontActivate);
+        //                 }
+        //         }
+        //     }
         }
     }
+
 
     void EditorScene::renderView()
     {
